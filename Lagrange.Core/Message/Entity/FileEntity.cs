@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Lagrange.Core.Internal.Packets.Message.Component;
 using Lagrange.Core.Internal.Packets.Message.Component.Extra;
 using Lagrange.Core.Internal.Packets.Message.Element;
@@ -117,4 +118,18 @@ public class FileEntity : IMessageEntity
     public string ToPreviewString() => $"[File] {FileName} ({FileSize}): {FileUrl ?? "failed to receive file url"}";
 
     public string ToPreviewText() => $"[文件] {FileName}";
+    public JsonNode ToJson()
+    {
+        var o = new JsonObject();
+        o["type"] = this.GetType().ToString().Split(".").Last();
+        o[nameof(FileSize)] = this.FileSize;
+        o[nameof(FileId)] = this.FileId;
+        o["FileSize"] = this.FileSize;
+        o["FileUrl"] = this.FileUrl;
+        o["FileName"] = this.FileName;
+        o["FileHash"] = this.FileHash;
+        o["FileMd5"] = this.FileMd5.Hex();
+        o["FileSha1"] = this.FileSha1.Hex();
+        return o;
+    }
 }

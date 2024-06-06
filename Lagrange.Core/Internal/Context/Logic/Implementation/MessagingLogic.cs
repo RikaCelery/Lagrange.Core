@@ -261,7 +261,7 @@ internal class MessagingLogic : LogicBase
         }
     }
 
-    private async Task ResolveIncomingChain(MessageChain chain)
+    private async Task ResolveIncomingChain(MessageChain chain,bool forwarding=false,string _uid="", bool isGroup=false)
     {
         foreach (var entity in chain)
         {
@@ -299,6 +299,14 @@ internal class MessagingLogic : LogicBase
                     {
                         var result = (MultiMsgDownloadEvent)results[0];
                         multi.Chains.AddRange((IEnumerable<MessageChain>?)result.Chains ?? Array.Empty<MessageChain>());
+                    
+                    string uid = (chain.IsGroup
+                        ? await Collection.Business.CachingLogic.ResolveUid(chain.GroupUin, chain.FriendUin)
+                        : chain.Uid) ?? "";
+                    foreach (var messageChain in (IEnumerable<MessageChain>?)result.Chains ?? Array.Empty<MessageChain>())
+                    {
+                           await ResolveIncomingChain(messageChain,true,uid,chain.IsGroup);
+                    }
                     }
 
                     break;
@@ -338,7 +346,10 @@ internal class MessagingLogic : LogicBase
                     string uid = (chain.IsGroup
                         ? await Collection.Business.CachingLogic.ResolveUid(chain.GroupUin, chain.FriendUin)
                         : chain.Uid) ?? "";
-                    var @event = VideoDownloadEvent.Create(video.VideoUuid, uid, video.FilePath, "", "", chain.IsGroup);
+                var @event = !forwarding?
+                    VideoDownloadEvent.Create(video.VideoUuid, uid, video.FilePath, "", "",
+                        chain.IsGroup):
+                    VideoDownloadEvent.Create(video.VideoUuid, _uid, video.VideoHash.ToLower()+".mp4", "", "",isGroup);
                     var results = await Collection.Business.SendEvent(@event);
                     if (results.Count != 0)
                     {

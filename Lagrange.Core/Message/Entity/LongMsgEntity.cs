@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 
@@ -14,6 +15,11 @@ public class LongMsgEntity : IMessageEntity
     {
         ResId = string.Empty;
         Chain = MessageBuilder.Group(0).Build();
+    }
+
+    public string Debug()
+    {
+        return JsonSerializer.Serialize(this);
     }
 
     public LongMsgEntity(string resId)

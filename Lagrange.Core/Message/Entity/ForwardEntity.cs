@@ -1,6 +1,8 @@
+using System.Text.Json.Nodes;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation.Extra;
+using Lagrange.Core.Utility.Extension;
 using ProtoBuf;
 
 namespace Lagrange.Core.Message.Entity;
@@ -108,4 +110,5 @@ public class ForwardEntity : IMessageEntity
     public string ToPreviewString() => $"[Forward] Time: {Time} Sequence: {Sequence} ";
 
     public string ToPreviewText() => string.Empty;
+    
 }

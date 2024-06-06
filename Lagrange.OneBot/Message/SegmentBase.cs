@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Lagrange.Core.Message;
 using LiteDB;
 
@@ -10,4 +11,5 @@ public abstract class SegmentBase
     public abstract void Build(MessageBuilder builder, SegmentBase segment);
     
     public abstract SegmentBase? FromEntity(MessageChain chain, IMessageEntity entity);
+
 }

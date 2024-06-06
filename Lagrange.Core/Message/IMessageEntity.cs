@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Lagrange.Core.Internal.Packets.Message.Component;
 using Lagrange.Core.Internal.Packets.Message.Element;
 
@@ -21,4 +23,11 @@ public interface IMessageEntity
     public string ToPreviewString(); // abstract method
 
     public string ToPreviewText() => "[暂不支持该消息类型]"; // virtual method
+
+    public JsonNode? ToJson()
+    {
+        var o = new JsonObject();
+        o["type"] = this.GetType().ToString().Split(".").Last();
+        return o;
+    }
 }

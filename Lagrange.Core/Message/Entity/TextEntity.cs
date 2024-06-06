@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 
@@ -6,6 +9,7 @@ namespace Lagrange.Core.Message.Entity;
 [MessageElement(typeof(Text))]
 public class TextEntity : IMessageEntity
 {
+    
     public string Text { get; set; }
     
     public TextEntity() => Text = "";
@@ -33,4 +37,11 @@ public class TextEntity : IMessageEntity
     }
 
     public string ToPreviewText() => Text;
+    public JsonNode ToJson()
+    {
+        var o = new JsonObject();
+        o["type"] = this.GetType().ToString().Split(".").Last();
+        o["Text"] = Text;
+        return o;
+    }
 }

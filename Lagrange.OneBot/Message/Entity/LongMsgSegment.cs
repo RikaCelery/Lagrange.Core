@@ -24,6 +24,6 @@ public partial class LongMsgSegment : SegmentBase
     {
         if (entity is not LongMsgEntity longMsg) throw new ArgumentException("Invalid entity type.");
 
-        return new ForwardSegment(longMsg.ResId ?? "");
+        return new ForwardSegment(longMsg.ResId ?? "", longMsg.Debug());
     }
 }

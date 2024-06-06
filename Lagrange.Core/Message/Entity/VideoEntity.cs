@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 using Lagrange.Core.Internal.Packets.Service.Oidb.Common;
@@ -43,7 +44,6 @@ public class VideoEntity : IMessageEntity
     internal VideoEntity(Vector2 size, int videoSize, string filePath, string fileMd5, string videoUuid)
     {
         Size = size;
-        VideoSize = videoSize;
         FilePath = filePath;
         VideoHash = fileMd5;
         VideoUuid = videoUuid;
@@ -98,4 +98,20 @@ public class VideoEntity : IMessageEntity
     public string ToPreviewString() => $"[Video {Size.X}x{Size.Y}]: {VideoSize} {VideoUrl}";
 
     public string ToPreviewText() => "[视频]";
+
+    public JsonNode ToJson()
+    {
+        
+        var o = new JsonObject();
+        o["type"] = this.GetType().ToString().Split(".").Last();
+        o["FilePath"] = this.FilePath;
+        o["VideoHash"] = this.VideoHash;
+        o["VideoSize"] = this.VideoSize;
+        o["VideoLength"] = this.VideoLength;
+        o["VideoUrl"] = this.VideoUrl;
+        o["VideoUuid"] = this.VideoUuid;
+        o["X"] = this.Size.X;
+        o["Y"] = this.Size.Y;
+        return o;
+    }
 }

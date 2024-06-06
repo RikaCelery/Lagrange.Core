@@ -1,10 +1,14 @@
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Binary.Compression;
+using Lagrange.Core.Utility.Extension;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace Lagrange.Core.Message.Entity;
@@ -13,6 +17,13 @@ namespace Lagrange.Core.Message.Entity;
 public class MultiMsgEntity : IMessageEntity
 {
     private static readonly XmlSerializer Serializer = new(typeof(MultiMessage));
+
+    public string Debug()
+    {
+        var ret = JsonSerializer.Serialize(this);
+
+        return ret;
+    }
 
     internal string? ResId { get; set; }
 
@@ -119,9 +130,26 @@ public class MultiMsgEntity : IMessageEntity
         if (elem.RichMsg is { ServiceId: 35, Template1: not null } richMsg)
         {
             var xml = ZCompression.ZDecompress(richMsg.Template1[1..]);
-            if ((MultiMessage?)Serializer.Deserialize(new MemoryStream(xml)) is { } xmlEntity)
+
+            try
             {
-                return new MultiMsgEntity(xmlEntity.ResId);
+                if ((MultiMessage?)Serializer.Deserialize(new MemoryStream(xml)) is { } xmlEntity)
+                {
+                    return new MultiMsgEntity(xmlEntity.ResId);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                try
+                {
+                    Console.WriteLine(System.Text.Encoding.UTF8.GetString(xml));
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    Console.WriteLine((xml.Hex()));
+                }
             }
         }
 
@@ -132,6 +160,35 @@ public class MultiMsgEntity : IMessageEntity
     public string ToPreviewString() => $"[MultiMsgEntity] {Chains.Count} chains";
 
     public string ToPreviewText() => "[聊天记录]";
+
+    public JsonNode ToJson()
+    {
+        var o = new JsonObject();
+        o["type"] = GetType().ToString().Split(".").Last();
+        o[nameof(Chains)] = Chains
+            .Select(chain =>
+            {
+                var j = new JsonObject();
+                j["type"] = "MessageChain";
+                var chains = chain
+                    .Select(entity => entity.ToJson())
+                    .Aggregate(new JsonArray(), (node, jsonNode) =>
+                    {
+                        node.Add(jsonNode);
+                        Console.WriteLine("Aggregate0: " + JsonSerializer.Serialize(jsonNode));
+                        return node;
+                    });
+                j["MessageChain"] = chains;
+                return j;
+            })
+            .Aggregate(new JsonArray(), (node, jsonNode) =>
+            {
+                node.Add(jsonNode);
+                Console.WriteLine("Aggregate1: " + JsonSerializer.Serialize(jsonNode));
+                return node;
+            });
+        return o;
+    }
 
     #region Json
 
@@ -257,7 +314,9 @@ public class MultiMsgEntity : IMessageEntity
             Text = text;
         }
 
-        public MultiTitle() { }
+        public MultiTitle()
+        {
+        }
     }
 
     [Serializable]

@@ -1,4 +1,6 @@
 using System.Numerics;
+using System.Text.Json.Nodes;
+using Lagrange.Core.Internal.Packets.Message.Component.Extra;
 using Lagrange.Core.Internal.Packets.Message.Element;
 using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 using Lagrange.Core.Internal.Packets.Service.Oidb.Common;
@@ -196,4 +198,17 @@ public class ImageEntity : IMessageEntity
             _ => "[图片]",
         }
         : Summary;
+    public JsonNode ToJson()
+    {
+        var o = new JsonObject();
+        o["type"] = this.GetType().ToString().Split(".").Last();
+        o["FilePath"] = this.FilePath;
+        o["Summary"] = this.Summary;
+        o["ImageSize"] = this.ImageSize;
+        o["ImageUrl"] = this.ImageUrl;
+        o["ImageUrl"] = this.ImageUrl;
+        o["X"] = this.PictureSize.X;
+        o["Y"] = this.PictureSize.X;
+        return o;
+    }
 }
