@@ -8,7 +8,7 @@ public sealed class MessageChain : List<IMessageEntity>
 {
     public MessageType Type { get; set; }
 
-    public uint? GroupUin { get; internal set; }
+    public uint? GroupUin { get; set; }
 
     public uint FriendUin { get; }
 
@@ -38,6 +38,13 @@ public sealed class MessageChain : List<IMessageEntity>
 
     #endregion
 
+    public MessageChain()
+    {
+        GroupUin = null;
+        Elements = new List<Elem>();
+        Type = MessageType.Group;
+        
+    }
     internal MessageChain(uint friendUin, string selfUid, string friendUid, uint targetUin = 0, uint sequence = 0, uint clientSequence = 0, ulong? messageId = null,
         MessageType type = MessageType.Friend)
     {

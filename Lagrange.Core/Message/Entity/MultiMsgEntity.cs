@@ -25,12 +25,12 @@ public class MultiMsgEntity : IMessageEntity
         return ret;
     }
 
-    internal string? ResId { get; set; }
+    public string? ResId { get; set; }
 
     [Obsolete("No more need for group uin")]
     public uint? GroupUin { get; set; }
 
-    public List<MessageChain> Chains { get; }
+    public List<MessageChain> Chains { get; set; }
 
     public string? DetailStr { get; set; }
 
