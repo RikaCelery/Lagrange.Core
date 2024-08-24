@@ -1,12 +1,14 @@
 using ProtoBuf;
 using System.Reflection;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Internal.Context;
 using Lagrange.Core.Message.Entity;
 using Lagrange.Core.Utility.Extension;
 using Lagrange.Core.Internal.Packets.Message.C2C;
 using Lagrange.Core.Internal.Packets.Message.Component;
 using Lagrange.Core.Internal.Packets.Message.Component.Extra;
 using Lagrange.Core.Internal.Packets.Message.Element;
+using Lagrange.Core.Internal.Packets.Message.Element.Implementation;
 using Lagrange.Core.Internal.Packets.Message.Routing;
 using ContentHead = Lagrange.Core.Internal.Packets.Message.ContentHead;
 using MessageBody = Lagrange.Core.Internal.Packets.Message.MessageBody;
@@ -97,6 +99,7 @@ internal static class MessagePacker
                 message.Body.MsgContent = stream.ToArray();
             }
         }
+
         return message;
     }
 
@@ -108,7 +111,7 @@ internal static class MessagePacker
         {
             switch (entity)
             {
-                case RecordEntity { Compat: { } compat }:  // Append Tag 04 -> Ptt
+                case RecordEntity { Compat: { } compat }: // Append Tag 04 -> Ptt
                 {
                     message.Body.RichText.Ptt = compat.Ptt;
                     message.Body.RichText.Elems.AddRange(compat.Elems);
@@ -121,6 +124,7 @@ internal static class MessagePacker
     public static MessageChain Parse(PushMsgBody message, bool isFake = false)
     {
         var chain = isFake ? ParseFakeChain(message) : ParseChain(message);
+        List<IMessageEntity> tmpChain = new List<IMessageEntity>();
 
         if (message.Body?.RichText is { Elems: { } elements }) // 怎么Body还能是null的
         {
@@ -133,7 +137,7 @@ internal static class MessagePacker
                         if (expectElem.GetValueByExpr(element) is not null &&
                             Factory[entityType].UnpackElement(element) is { } entity)
                         {
-                            chain.Add(entity);
+                            tmpChain.Add(entity);
                             break;
                         }
                     }
@@ -141,9 +145,39 @@ internal static class MessagePacker
             }
         }
 
+        for (var i = 0; i < tmpChain.Count; i++)
+        {
+            if (tmpChain[i] is ImageEntity { CompatFace: not null } entity)
+            {
+                var i1 = i;
+                if (tmpChain.Where((x, j) =>
+                    {
+                        if (x is not ImageEntity imageEntity || i1 == j)
+                        {
+                            return false;
+                        }
+
+                        return imageEntity.Path == entity.Path;
+                    }).Any())
+                {
+                    Console.WriteLine($"Ignore CustomFace: {entity.ToJson()}");
+                }
+                else
+                {
+                    chain.Add(entity);
+                }
+            }
+            else
+            {
+                
+                chain.Add(tmpChain[i]);
+            }
+        }
+
+
         switch (message.Body?.RichText?.Ptt)
         {
-            case { } groupPtt when chain.IsGroup && groupPtt.FileId != 0:  // for legacy ptt
+            case { } groupPtt when chain.IsGroup && groupPtt.FileId != 0: //  for legacy ptt
                 chain.Add(new RecordEntity(groupPtt.GroupFileKey, groupPtt.FileName, groupPtt.FileMd5));
                 break;
             case { } privatePtt when !chain.IsGroup:
@@ -176,20 +210,14 @@ internal static class MessagePacker
     {
         RoutingHead = new RoutingHead
         {
-            C2C = chain.IsGroup || chain.HasTypeOf<FileEntity>() ? null : new C2C
-            {
-                Uid = chain.FriendInfo?.Uid,
-                Uin = chain.FriendUin
-            },
-            Grp = !chain.IsGroup ? null : new Grp // for consistency of code so inverted condition
-            {
-                GroupCode = chain.GroupUin
-            },
-            Trans0X211 = !chain.HasTypeOf<FileEntity>() ? null : new Trans0X211
-            {
-                CcCmd = 4,
-                Uid = chain.Uid
-            }
+            C2C = chain.IsGroup || chain.HasTypeOf<FileEntity>() ? null : new C2C { Uid = chain.FriendInfo?.Uid, Uin = chain.FriendUin },
+            Grp = !chain.IsGroup
+                ? null
+                : new Grp // for consistency of code so inverted condition
+                {
+                    GroupCode = chain.GroupUin
+                },
+            Trans0X211 = !chain.HasTypeOf<FileEntity>() ? null : new Trans0X211 { CcCmd = 4, Uid = chain.Uid }
         },
         ContentHead = new ContentHead
         {
@@ -209,16 +237,15 @@ internal static class MessagePacker
         {
             FromUin = chain.FriendUin,
             ToUid = chain.IsGroup ? null : selfUid,
-            Grp = !chain.IsGroup ? null : new ResponseGrp // for consistency of code so inverted condition
-            {
+            Grp = !chain.IsGroup
+                ? null
+                : new ResponseGrp // for consistency of code so inverted condition
+                {
                 GroupUin = chain.GroupUin ?? 0,
                 MemberName = !string.IsNullOrWhiteSpace(chain.FriendInfo?.Nickname) ? chain.FriendInfo.Nickname : chain.GroupMemberInfo?.MemberName ?? chain.GroupMemberInfo?.MemberCard ?? "",
                 Unknown5 = 2
-            },
-            Forward = chain.IsGroup ? null : new ResponseForward
-            {
-                FriendName = chain.FriendInfo?.Nickname
-            }
+                },
+            Forward = chain.IsGroup ? null : new ResponseForward { FriendName = chain.FriendInfo?.Nickname }
         },
         ContentHead = new ContentHead
         {
@@ -255,7 +282,6 @@ internal static class MessagePacker
                 message.ContentHead.Sequence ?? 0,
                 message.ContentHead.NewId ?? 0,
                 message.ContentHead.Type == 141 ? MessageChain.MessageType.Temp : MessageChain.MessageType.Friend)
-
             : new MessageChain(
                 message.ResponseHead.Grp.GroupUin,
                 message.ResponseHead.FromUin,
@@ -275,12 +301,7 @@ internal static class MessagePacker
 
         if (@base.IsGroup && message.ResponseHead.Grp != null)
         {
-            @base.GroupMemberInfo = new BotGroupMember
-            {
-                MemberCard = message.ResponseHead.Grp.MemberName,
-                MemberName = message.ResponseHead.Grp.MemberName,
-                Uid = message.ResponseHead.FromUid ?? string.Empty
-            };
+            @base.GroupMemberInfo = new BotGroupMember { MemberCard = message.ResponseHead.Grp.MemberName, MemberName = message.ResponseHead.Grp.MemberName, Uid = message.ResponseHead.FromUid ?? string.Empty };
         }
         else
         {
@@ -296,5 +317,4 @@ internal static class MessagePacker
 
         return @base;
     }
-
 }

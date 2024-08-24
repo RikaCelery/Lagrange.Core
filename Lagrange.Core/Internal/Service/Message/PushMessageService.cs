@@ -20,6 +20,7 @@ internal class PushMessageService : BaseService<PushMessageEvent>
     protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out PushMessageEvent output, out List<ProtocolEvent>? extraEvents)
     {
+
         var message = Serializer.Deserialize<PushMsg>(input);
         var packetType = (PkgType)message.Message.ContentHead.Type;
 
