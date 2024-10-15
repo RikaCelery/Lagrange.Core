@@ -353,6 +353,20 @@ public sealed class MessageBuilder
         return this;
     }
 
+    [Obsolete("This is an embarrassing typo... sorry; see also: GreyTip")]
+    public MessageBuilder GeryTip(string greyTip)
+    {
+        return GreyTip(greyTip);
+    }
+
+    public MessageBuilder GreyTip(string greyTip)
+    {
+        var greyTipEntity = new GreyTipEntity(greyTip);
+        _chain.Add(greyTipEntity);
+
+        return this;
+    }
+
     public MessageBuilder Add(IMessageEntity entity)
     {
         _chain.Add(entity);
