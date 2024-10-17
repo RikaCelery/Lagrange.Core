@@ -66,18 +66,22 @@ public partial class LocationSegment : SegmentBase
     public override SegmentBase? FromEntity(MessageChain chain, IMessageEntity entity)
     {
         if (entity is not LightAppEntity lightApp) throw new ArgumentException("Invalid entity type.");
-
-        if (JsonSerializer.Deserialize<LightApp>(lightApp.Payload, Options) is { App: "com.tencent.map" } app)
-        {
-            return new LocationSegment
+        try { 
+            if (JsonSerializer.Deserialize<LightApp>(lightApp.Payload, Options) is { App: "com.tencent.map" } app)
             {
-                Latitude = app.Meta.LocationSearch.Lat,
-                Longitude =app.Meta.LocationSearch.Lng,
-                Content = app.Meta.LocationSearch.Address,
-                Title = app.Meta.LocationSearch.Name,
-            };
+                return new LocationSegment
+                {
+                    Latitude = app.Meta.LocationSearch.Lat,
+                    Longitude =app.Meta.LocationSearch.Lng,
+                    Content = app.Meta.LocationSearch.Address,
+                    Title = app.Meta.LocationSearch.Name,
+                };
+            }
         }
-        
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
         return null;
     }
 }
