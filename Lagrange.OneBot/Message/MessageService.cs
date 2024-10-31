@@ -79,23 +79,21 @@ public sealed class MessageService
         var segments = Convert(chain);
         int hash = MessageRecord.CalcMessageHash(chain.MessageId, chain.Sequence);
         string raw = ToRawMessage(segments);
-        object request = _stringPost
-            ? new OneBotPrivateStringMsg(uin, new OneBotSender(chain.FriendUin, chain.FriendInfo?.Nickname ?? string.Empty), "friend")
-            {
-                MessageId = hash,
-                UserId = chain.FriendUin,
-                Message = raw,
-                RawMessage = raw,
-                TargetId = chain.TargetUin,
-            }
-            : new OneBotPrivateMsg(uin, new OneBotSender(chain.FriendUin, chain.FriendInfo?.Nickname ?? string.Empty), "friend")
-            {
-                MessageId = hash,
-                UserId = chain.FriendUin,
-                Message = segments,
-                RawMessage = raw,
-                TargetId = chain.TargetUin
-            };
+        object request = _stringPost ? new OneBotPrivateStringMsg(uin, new OneBotSender(chain.FriendUin, chain.FriendInfo?.Nickname ?? string.Empty), "friend")
+        {
+            MessageId = hash,
+            UserId = chain.FriendUin,
+            Message = raw,
+            RawMessage = raw,
+            TargetId = chain.TargetUin,
+        } : new OneBotPrivateMsg(uin, new OneBotSender(chain.FriendUin, chain.FriendInfo?.Nickname ?? string.Empty), "friend")
+        {
+            MessageId = hash,
+            UserId = chain.FriendUin,
+            Message = segments,
+            RawMessage = raw,
+            TargetId = chain.TargetUin
+        };
         return request;
     }
 
@@ -126,7 +124,13 @@ public sealed class MessageService
         _context.GetCollection<MessageRecord>().Insert(new BsonValue(record.MessageHash), record);
 
         var segments = Convert(e.Chain);
-        var request = new OneBotPrivateMsg(bot.BotUin, new OneBotSender(e.Chain.FriendUin, e.Chain.FriendInfo?.Nickname ?? string.Empty), "group") { MessageId = record.MessageHash, UserId = e.Chain.FriendUin, Message = segments, RawMessage = ToRawMessage(segments) };
+        var request = new OneBotPrivateMsg(bot.BotUin, new OneBotSender(e.Chain.FriendUin, e.Chain.FriendInfo?.Nickname ?? string.Empty), "group")
+        {
+            MessageId = record.MessageHash,
+            UserId = e.Chain.FriendUin,
+            Message = segments,
+            RawMessage = ToRawMessage(segments)
+        };
 
         _ = _service.SendJsonAsync(request);
     }
@@ -176,11 +180,9 @@ public sealed class MessageService
                     rawMessageBuilder.Append('=');
                     rawMessageBuilder.Append(EscapeCQ(property.Value.ToString()));
                 }
-
                 rawMessageBuilder.Append(']');
             }
         }
-
         return rawMessageBuilder.ToString();
     }
 
