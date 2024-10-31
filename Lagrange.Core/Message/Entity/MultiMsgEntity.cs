@@ -129,27 +129,10 @@ public class MultiMsgEntity : IMessageEntity
     {
         if (elem.RichMsg is { ServiceId: 35, Template1: not null } richMsg)
         {
-            var xml = ZCompression.ZDecompress(richMsg.Template1[1..]);
-
-            try
+            var xml = ZCompression.ZDecompress(richMsg.Template1.AsSpan(1));
+            if ((MultiMessage?)Serializer.Deserialize(new MemoryStream(xml)) is { } xmlEntity)
             {
-                if ((MultiMessage?)Serializer.Deserialize(new MemoryStream(xml)) is { } xmlEntity)
-                {
-                    return new MultiMsgEntity(xmlEntity.ResId);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                try
-                {
-                    Console.WriteLine(System.Text.Encoding.UTF8.GetString(xml));
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    Console.WriteLine((xml.Hex()));
-                }
+                return new MultiMsgEntity(xmlEntity.ResId);
             }
         }
 
@@ -314,9 +297,7 @@ public class MultiMsgEntity : IMessageEntity
             Text = text;
         }
 
-        public MultiTitle()
-        {
-        }
+        public MultiTitle() { }
     }
 
     [Serializable]
